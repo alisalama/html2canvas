@@ -1970,6 +1970,18 @@ function html2canvas(nodeList, options) {
     options.renderer = typeof(options.renderer) === "function" ? options.renderer : CanvasRenderer;
     options.strict = !!options.strict;
 
+    if (options.scale){
+        if (!isNaN(options.scale)) {
+            options.scaleX = options.scaleY = parseFloat(options.scale);
+        } else {
+            options.scaleX = parseFloat(options.scaleX) || 1;
+            options.scaleY = parseFloat(options.scaleY) || 1;
+        }
+    } else {
+        options.scaleX = parseFloat(options.scaleX) || 1;
+        options.scaleY = parseFloat(options.scaleY) || 1;
+    }
+
     if (typeof(nodeList) === "string") {
         if (typeof(options.proxy) !== "string") {
             return Promise.reject("Proxy must be used when rendering url");
@@ -3960,10 +3972,17 @@ function CanvasRenderer(width, height) {
         this.canvas.height = height;
     }
     this.ctx = this.canvas.getContext("2d");
+
+    // account for scaling, if necessary...
+    if (this.options.scaleX !== 1 || this.options.scaleY !== 1) {
+        this.ctx.scale(this.options.scaleX, this.options.scaleY);
+    }
+
     this.taintCtx = this.document.createElement("canvas").getContext("2d");
     this.ctx.textBaseline = "bottom";
     this.variables = {};
-    log("Initialized CanvasRenderer with size", width, "x", height);
+    log("Initialized CanvasRenderer with size", width, "x", height, " @ scale(", this.options.scaleX, ", ", this.options.scaleY,")");
+
 }
 
 CanvasRenderer.prototype = Object.create(Renderer.prototype);
