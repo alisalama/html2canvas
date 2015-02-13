@@ -29,6 +29,18 @@ function html2canvas(nodeList, options) {
     options.renderer = typeof(options.renderer) === "function" ? options.renderer : CanvasRenderer;
     options.strict = !!options.strict;
 
+    if (options.scale){
+        if (!isNaN(options.scale)) {
+            options.scaleX = options.scaleY = parseFloat(options.scale);
+        } else {
+            options.scaleX = parseFloat(options.scaleX) || 1;
+            options.scaleY = parseFloat(options.scaleY) || 1;
+        }
+    } else {
+        options.scaleX = parseFloat(options.scaleX) || 1;
+        options.scaleY = parseFloat(options.scaleY) || 1;
+    }
+
     if (typeof(nodeList) === "string") {
         if (typeof(options.proxy) !== "string") {
             return Promise.reject("Proxy must be used when rendering url");

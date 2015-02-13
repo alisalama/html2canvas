@@ -10,10 +10,17 @@ function CanvasRenderer(width, height) {
         this.canvas.height = height;
     }
     this.ctx = this.canvas.getContext("2d");
+
+    // account for scaling, if necessary...
+    if (this.options.scaleX !== 1 || this.options.scaleY !== 1) {
+        this.ctx.scale(this.options.scaleX, this.options.scaleY);
+    }
+
     this.taintCtx = this.document.createElement("canvas").getContext("2d");
     this.ctx.textBaseline = "bottom";
     this.variables = {};
-    log("Initialized CanvasRenderer with size", width, "x", height);
+    log("Initialized CanvasRenderer with size", width, "x", height, " @ scale(", this.options.scaleX, ", ", this.options.scaleY,")");
+
 }
 
 CanvasRenderer.prototype = Object.create(Renderer.prototype);
