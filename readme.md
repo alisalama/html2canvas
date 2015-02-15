@@ -1,6 +1,11 @@
 html2canvas
 ===========
 
+#### Fork Info ####
+This fork adds the following functionality to html2canvas:
+* support for scaling the canvas.  Useful if you plan to export the canvas to PNG via .toDataURL() and want a higher-res image
+* support for rendering list bullets (numerical, disc, square, circle). Adapted from a PR by @flamenco
+
 [Homepage](http://html2canvas.hertzen.com) | [Downloads](https://github.com/niklasvh/html2canvas/releases) | [Questions](http://stackoverflow.com/questions/tagged/html2canvas?sort=newest) | [Donate](https://www.gittip.com/niklasvh/)
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/niklasvh/html2canvas?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build Status](https://travis-ci.org/niklasvh/html2canvas.png)](https://travis-ci.org/niklasvh/html2canvas)
