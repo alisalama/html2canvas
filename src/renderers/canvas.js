@@ -1,5 +1,7 @@
 var Renderer = require('../renderer');
 var LinearGradientContainer = require('../lineargradientcontainer');
+var ListItemContainer = require('../listitemcontainer');
+var ListContainer = require('../listcontainer');
 var log = require('../log');
 
 function CanvasRenderer(width, height) {
@@ -20,7 +22,6 @@ function CanvasRenderer(width, height) {
     this.ctx.textBaseline = "bottom";
     this.variables = {};
     log("Initialized CanvasRenderer with size", width, "x", height, " @ scale(", this.options.scaleX, ", ", this.options.scaleY,")");
-
 }
 
 CanvasRenderer.prototype = Object.create(Renderer.prototype);
@@ -133,6 +134,12 @@ CanvasRenderer.prototype.text = function(text, left, bottom) {
     this.ctx.fillText(text, left, bottom);
 };
 
+CanvasRenderer.prototype.measureText = function(text) {
+    return this.ctx.measureText(text);
+};
+
+
+
 CanvasRenderer.prototype.backgroundRepeatShape = function(imageContainer, backgroundPosition, size, bounds, left, top, width, height, borderData) {
     var shape = [
         ["line", Math.round(left), Math.round(top)],
@@ -180,6 +187,55 @@ CanvasRenderer.prototype.resizeImage = function(imageContainer, size) {
     ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, size.width, size.height );
     return canvas;
 };
+
+
+CanvasRenderer.prototype.renderListItemAdornment = function(container, bounds, styleType, color, sizeToTextWidthRatio, paddingToTextWidthRatio){
+    var textWidth     = this.measureText("M").width;
+    var size          = textWidth * sizeToTextWidthRatio;
+    var padding       = textWidth * paddingToTextWidthRatio;
+    var x             = bounds.left - padding - size;
+    var y             = bounds.top + (bounds.bottom - bounds.top) / 2 - (size / 2);
+
+    switch(styleType) {
+
+        case 'decimal':
+        case "decimal-leading-zero":
+        case 'upper-alpha':
+        case 'lower-alpha':
+        case 'upper-roman':
+        case 'lower-roman':
+            var listItemContainer = new ListItemContainer(container.parent.node, container.parent.parent);
+            var listContainer     = new ListContainer(listItemContainer.parent.node, listItemContainer.parent.parent);
+            var index             = listContainer.findNumericalIndexOfListItem(listItemContainer)
+            var value             = listItemContainer.listItemText(styleType, index);
+
+            value += '.';
+            var left = bounds.left - padding;
+            left -= this.measureText(value).width;
+
+            this.text(value, left, bounds.bottom);
+            break;
+
+        case 'square':
+            // log(" > for list of type '",styleType,"', returning square  @ {x:",x,", y:",y,", size:",size,"}");
+            this.rectangle(x, y , size, size, color);
+            break;
+
+        case 'circle':
+            // log(" > for list of type '",styleType,"', returning stroked circle  @ {x:",x,", y:",y,", size:",size,"}");
+            this.circleStroke(x, y, size, "#ffffff", 1, color);
+            // reset the fillstyle (b/c of the #ffffff used to make the circle "hollow"
+            this.setFillStyle(color);
+            break;
+
+        case 'disc':
+        default:
+            // log(" > for list of type '",styleType,"', returning disc @ {x:",x,", y:",y,", size:",size,"}");
+            this.circle(x, y, size);
+            break;
+    }
+}
+
 
 function hasEntries(array) {
     return array.length > 0;

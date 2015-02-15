@@ -456,9 +456,28 @@ NodeParser.prototype.paintText = function(container) {
             if (bounds) {
                 this.renderer.text(textList[index], bounds.left, bounds.bottom);
                 this.renderTextDecoration(container.parent, bounds, this.fontMetrics.getMetrics(family, size));
+
+                if (index == 0 && container.parent.node.nodeName === 'LI'){
+                    this.renderListItemStyle(container, bounds);
+                }
             }
         }, this);
     }, this);
+};
+
+
+NodeParser.prototype.renderListItemStyle = function(container, bounds) {
+    var styleType     = container.parent.css('listStyleType');
+    var listItemColor = container.parent.css('color');
+
+    if (styleType === 'none'){
+        return;
+    }
+
+    var sizeToTextWidthRatio     = .5;
+    var paddingToTextWidthRatio  = .75;
+
+    this.renderer.renderListItemAdornment(container, bounds, styleType, listItemColor, sizeToTextWidthRatio, paddingToTextWidthRatio);
 };
 
 NodeParser.prototype.renderTextDecoration = function(container, bounds, metrics) {
