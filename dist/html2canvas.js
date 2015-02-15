@@ -1665,7 +1665,7 @@ module.exports = function(ownerDocument, containerDocument, width, height, optio
     });
 };
 
-},{"./log":15,"./promise":18}],5:[function(require,module,exports){
+},{"./log":17,"./promise":20}],5:[function(require,module,exports){
 // http://dev.w3.org/csswg/css-color/
 
 function Color(value) {
@@ -2099,7 +2099,7 @@ function absoluteUrl(url) {
     return link;
 }
 
-},{"./clone":4,"./imageloader":13,"./log":15,"./nodecontainer":16,"./nodeparser":17,"./promise":18,"./proxy":19,"./renderers/canvas":23,"./support":25,"./utils":29}],7:[function(require,module,exports){
+},{"./clone":4,"./imageloader":13,"./log":17,"./nodecontainer":18,"./nodeparser":19,"./promise":20,"./proxy":21,"./renderers/canvas":25,"./support":27,"./utils":31}],7:[function(require,module,exports){
 var Promise = require('./promise');
 var log = require('./log');
 var smallImage = require('./utils').smallImage;
@@ -2124,7 +2124,7 @@ function DummyImageContainer(src) {
 
 module.exports = DummyImageContainer;
 
-},{"./log":15,"./promise":18,"./utils":29}],8:[function(require,module,exports){
+},{"./log":17,"./promise":20,"./utils":31}],8:[function(require,module,exports){
 var smallImage = require('./utils').smallImage;
 
 function Font(family, size) {
@@ -2178,7 +2178,7 @@ function Font(family, size) {
 
 module.exports = Font;
 
-},{"./utils":29}],9:[function(require,module,exports){
+},{"./utils":31}],9:[function(require,module,exports){
 var Font = require('./font');
 
 function FontMetrics() {
@@ -2228,7 +2228,7 @@ FrameContainer.prototype.proxyLoad = function(proxy, bounds, options) {
 
 module.exports = FrameContainer;
 
-},{"./core":6,"./promise":18,"./proxy":19,"./utils":29}],11:[function(require,module,exports){
+},{"./core":6,"./promise":20,"./proxy":21,"./utils":31}],11:[function(require,module,exports){
 var Promise = require('./promise');
 
 function GradientContainer(imageData) {
@@ -2249,7 +2249,7 @@ GradientContainer.prototype.TYPES = {
 
 module.exports = GradientContainer;
 
-},{"./promise":18}],12:[function(require,module,exports){
+},{"./promise":20}],12:[function(require,module,exports){
 var Promise = require('./promise');
 
 function ImageContainer(src, cors) {
@@ -2272,7 +2272,7 @@ function ImageContainer(src, cors) {
 
 module.exports = ImageContainer;
 
-},{"./promise":18}],13:[function(require,module,exports){
+},{"./promise":20}],13:[function(require,module,exports){
 var Promise = require('./promise');
 var log = require('./log');
 var ImageContainer = require('./imagecontainer');
@@ -2432,7 +2432,7 @@ ImageLoader.prototype.timeout = function(container, timeout) {
 
 module.exports = ImageLoader;
 
-},{"./dummyimagecontainer":7,"./framecontainer":10,"./imagecontainer":12,"./lineargradientcontainer":14,"./log":15,"./promise":18,"./proxyimagecontainer":20,"./svgcontainer":26,"./svgnodecontainer":27,"./utils":29,"./webkitgradientcontainer":30}],14:[function(require,module,exports){
+},{"./dummyimagecontainer":7,"./framecontainer":10,"./imagecontainer":12,"./lineargradientcontainer":14,"./log":17,"./promise":20,"./proxyimagecontainer":22,"./svgcontainer":28,"./svgnodecontainer":29,"./utils":31,"./webkitgradientcontainer":32}],14:[function(require,module,exports){
 var GradientContainer = require('./gradientcontainer');
 var Color = require('./color');
 
@@ -2513,13 +2513,112 @@ LinearGradientContainer.prototype.stepRegExp = /((?:rgb|rgba)\(\d{1,3},\s\d{1,3}
 module.exports = LinearGradientContainer;
 
 },{"./color":5,"./gradientcontainer":11}],15:[function(require,module,exports){
+var NodeContainer = require('./nodecontainer');
+
+function ListContainer(node, parent) {
+    NodeContainer.call(this, node, parent);
+}
+
+ListContainer.prototype = Object.create(NodeContainer.prototype);
+
+ListContainer.prototype.getNodeList = function(){
+
+    return Array.prototype.slice.call(this.node.children);
+};
+
+ListContainer.prototype.findNumericalIndexOfListItem = function(listItem){
+
+    return this.getNodeList().indexOf(listItem.node) + 1;
+
+};
+
+module.exports = ListContainer;
+
+},{"./nodecontainer":18}],16:[function(require,module,exports){
+var NodeContainer = require('./nodecontainer');
+
+function ListItemContainer(node, parent) {
+    NodeContainer.call(this, node, parent);
+}
+
+ListItemContainer.prototype = Object.create(NodeContainer.prototype);
+
+
+ListItemContainer.prototype.generateListNumber = {
+
+    listAlpha : function(number) {
+        var tmp = "", modulus;
+
+        do {
+            modulus = number % 26;
+            tmp = String.fromCharCode((modulus) + 64) + tmp;
+            number = number / 26;
+        } while ((number * 26) > 26);
+
+        return tmp;
+    },
+
+    listRoman : function(number) {
+        var romanArray = [
+            "M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"
+        ], decimal = [
+            1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1
+        ], roman = "", v, len = romanArray.length;
+
+        if (number <= 0 || number >= 4000) {
+            return number;
+        }
+
+        for (v = 0; v < len; v += 1) {
+            while (number >= decimal[v]) {
+                number -= decimal[v];
+                roman += romanArray[v];
+            }
+        }
+
+        return roman;
+    }
+};
+
+ListItemContainer.prototype.listItemText = function (type, currentIndex) {
+
+    switch (type) {
+        case "decimal-leading-zero":
+            text = (currentIndex.toString().length === 1) ? currentIndex = "0" + currentIndex.toString() : currentIndex.toString();
+            break;
+        case "upper-roman":
+            text = this.generateListNumber.listRoman(currentIndex);
+            break;
+        case "lower-roman":
+            text = this.generateListNumber.listRoman(currentIndex).toLowerCase();
+            break;
+        case "lower-alpha":
+            text = this.generateListNumber.listAlpha(currentIndex).toLowerCase();
+            break;
+        case "upper-alpha":
+            text = this.generateListNumber.listAlpha(currentIndex);
+            break;
+        case "decimal":
+        default:
+            text = currentIndex;
+            break;
+    }
+
+    return text;
+};
+
+
+
+module.exports = ListItemContainer;
+
+},{"./nodecontainer":18}],17:[function(require,module,exports){
 module.exports = function() {
     if (window.html2canvas.logging && window.console && window.console.log) {
         Function.prototype.bind.call(window.console.log, (window.console)).apply(window.console, [(Date.now() - window.html2canvas.start) + "ms", "html2canvas:"].concat([].slice.call(arguments, 0)));
     }
 };
 
-},{}],16:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 var Color = require('./color');
 var utils = require('./utils');
 var getBounds = utils.getBounds;
@@ -2812,7 +2911,7 @@ function asFloat(str) {
 
 module.exports = NodeContainer;
 
-},{"./color":5,"./utils":29}],17:[function(require,module,exports){
+},{"./color":5,"./utils":31}],19:[function(require,module,exports){
 var log = require('./log');
 var punycode = require('punycode');
 var NodeContainer = require('./nodecontainer');
@@ -3271,9 +3370,28 @@ NodeParser.prototype.paintText = function(container) {
             if (bounds) {
                 this.renderer.text(textList[index], bounds.left, bounds.bottom);
                 this.renderTextDecoration(container.parent, bounds, this.fontMetrics.getMetrics(family, size));
+
+                if (index == 0 && container.parent.node.nodeName === 'LI'){
+                    this.renderListItemStyle(container, bounds);
+                }
             }
         }, this);
     }, this);
+};
+
+
+NodeParser.prototype.renderListItemStyle = function(container, bounds) {
+    var styleType     = container.parent.css('listStyleType');
+    var listItemColor = container.parent.css('color');
+
+    if (styleType === 'none'){
+        return;
+    }
+
+    var sizeToTextWidthRatio     = .5;
+    var paddingToTextWidthRatio  = .75;
+
+    this.renderer.renderListItemAdornment(container, bounds, styleType, listItemColor, sizeToTextWidthRatio, paddingToTextWidthRatio);
 };
 
 NodeParser.prototype.renderTextDecoration = function(container, bounds, metrics) {
@@ -3684,10 +3802,10 @@ function hasUnicode(string) {
 
 module.exports = NodeParser;
 
-},{"./color":5,"./fontmetrics":9,"./log":15,"./nodecontainer":16,"./promise":18,"./pseudoelementcontainer":21,"./stackingcontext":24,"./textcontainer":28,"./utils":29,"punycode":3}],18:[function(require,module,exports){
+},{"./color":5,"./fontmetrics":9,"./log":17,"./nodecontainer":18,"./promise":20,"./pseudoelementcontainer":23,"./stackingcontext":26,"./textcontainer":30,"./utils":31,"punycode":3}],20:[function(require,module,exports){
 module.exports = require('es6-promise').Promise;
 
-},{"es6-promise":1}],19:[function(require,module,exports){
+},{"es6-promise":1}],21:[function(require,module,exports){
 var Promise = require('./promise');
 var XHR = require('./xhr');
 var utils = require('./utils');
@@ -3785,7 +3903,7 @@ exports.Proxy = Proxy;
 exports.ProxyURL = ProxyURL;
 exports.loadUrlDocument = loadUrlDocument;
 
-},{"./clone":4,"./log":15,"./promise":18,"./utils":29,"./xhr":31}],20:[function(require,module,exports){
+},{"./clone":4,"./log":17,"./promise":20,"./utils":31,"./xhr":33}],22:[function(require,module,exports){
 var ProxyURL = require('./proxy').ProxyURL;
 var Promise = require('./promise');
 
@@ -3809,7 +3927,7 @@ function ProxyImageContainer(src, proxy) {
 
 module.exports = ProxyImageContainer;
 
-},{"./promise":18,"./proxy":19}],21:[function(require,module,exports){
+},{"./promise":20,"./proxy":21}],23:[function(require,module,exports){
 var NodeContainer = require('./nodecontainer');
 
 function PseudoElementContainer(node, parent, type) {
@@ -3849,7 +3967,7 @@ PseudoElementContainer.prototype.PSEUDO_HIDE_ELEMENT_CLASS_AFTER = "___html2canv
 
 module.exports = PseudoElementContainer;
 
-},{"./nodecontainer":16}],22:[function(require,module,exports){
+},{"./nodecontainer":18}],24:[function(require,module,exports){
 var log = require('./log');
 
 function Renderer(width, height, images, options, document) {
@@ -3959,9 +4077,11 @@ Renderer.prototype.renderBackgroundRepeating = function(container, bounds, image
 
 module.exports = Renderer;
 
-},{"./log":15}],23:[function(require,module,exports){
+},{"./log":17}],25:[function(require,module,exports){
 var Renderer = require('../renderer');
 var LinearGradientContainer = require('../lineargradientcontainer');
+var ListItemContainer = require('../listitemcontainer');
+var ListContainer = require('../listcontainer');
 var log = require('../log');
 
 function CanvasRenderer(width, height) {
@@ -3982,7 +4102,6 @@ function CanvasRenderer(width, height) {
     this.ctx.textBaseline = "bottom";
     this.variables = {};
     log("Initialized CanvasRenderer with size", width, "x", height, " @ scale(", this.options.scaleX, ", ", this.options.scaleY,")");
-
 }
 
 CanvasRenderer.prototype = Object.create(Renderer.prototype);
@@ -4095,6 +4214,12 @@ CanvasRenderer.prototype.text = function(text, left, bottom) {
     this.ctx.fillText(text, left, bottom);
 };
 
+CanvasRenderer.prototype.measureText = function(text) {
+    return this.ctx.measureText(text);
+};
+
+
+
 CanvasRenderer.prototype.backgroundRepeatShape = function(imageContainer, backgroundPosition, size, bounds, left, top, width, height, borderData) {
     var shape = [
         ["line", Math.round(left), Math.round(top)],
@@ -4143,13 +4268,62 @@ CanvasRenderer.prototype.resizeImage = function(imageContainer, size) {
     return canvas;
 };
 
+
+CanvasRenderer.prototype.renderListItemAdornment = function(container, bounds, styleType, color, sizeToTextWidthRatio, paddingToTextWidthRatio){
+    var textWidth     = this.measureText("M").width;
+    var size          = textWidth * sizeToTextWidthRatio;
+    var padding       = textWidth * paddingToTextWidthRatio;
+    var x             = bounds.left - padding - size;
+    var y             = bounds.top + (bounds.bottom - bounds.top) / 2 - (size / 2);
+
+    switch(styleType) {
+
+        case 'decimal':
+        case "decimal-leading-zero":
+        case 'upper-alpha':
+        case 'lower-alpha':
+        case 'upper-roman':
+        case 'lower-roman':
+            var listItemContainer = new ListItemContainer(container.parent.node, container.parent.parent);
+            var listContainer     = new ListContainer(listItemContainer.parent.node, listItemContainer.parent.parent);
+            var index             = listContainer.findNumericalIndexOfListItem(listItemContainer)
+            var value             = listItemContainer.listItemText(styleType, index);
+
+            value += '.';
+            var left = bounds.left - padding;
+            left -= this.measureText(value).width;
+
+            this.text(value, left, bounds.bottom);
+            break;
+
+        case 'square':
+            // log(" > for list of type '",styleType,"', returning square  @ {x:",x,", y:",y,", size:",size,"}");
+            this.rectangle(x, y , size, size, color);
+            break;
+
+        case 'circle':
+            // log(" > for list of type '",styleType,"', returning stroked circle  @ {x:",x,", y:",y,", size:",size,"}");
+            this.circleStroke(x, y, size, "#ffffff", 1, color);
+            // reset the fillstyle (b/c of the #ffffff used to make the circle "hollow"
+            this.setFillStyle(color);
+            break;
+
+        case 'disc':
+        default:
+            // log(" > for list of type '",styleType,"', returning disc @ {x:",x,", y:",y,", size:",size,"}");
+            this.circle(x, y, size);
+            break;
+    }
+}
+
+
 function hasEntries(array) {
     return array.length > 0;
 }
 
 module.exports = CanvasRenderer;
 
-},{"../lineargradientcontainer":14,"../log":15,"../renderer":22}],24:[function(require,module,exports){
+},{"../lineargradientcontainer":14,"../listcontainer":15,"../listitemcontainer":16,"../log":17,"../renderer":24}],26:[function(require,module,exports){
 var NodeContainer = require('./nodecontainer');
 
 function StackingContext(hasOwnStacking, opacity, element, parent) {
@@ -4169,7 +4343,7 @@ StackingContext.prototype.getParentStack = function(context) {
 
 module.exports = StackingContext;
 
-},{"./nodecontainer":16}],25:[function(require,module,exports){
+},{"./nodecontainer":18}],27:[function(require,module,exports){
 function Support(document) {
     this.rangeBounds = this.testRangeBounds(document);
     this.cors = this.testCORS();
@@ -4222,7 +4396,7 @@ Support.prototype.testSVG = function() {
 
 module.exports = Support;
 
-},{}],26:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var Promise = require('./promise');
 var XHR = require('./xhr');
 var decode64 = require('./utils').decode64;
@@ -4277,7 +4451,7 @@ SVGContainer.prototype.decode64 = function(str) {
 
 module.exports = SVGContainer;
 
-},{"./promise":18,"./utils":29,"./xhr":31}],27:[function(require,module,exports){
+},{"./promise":20,"./utils":31,"./xhr":33}],29:[function(require,module,exports){
 var SVGContainer = require('./svgcontainer');
 var Promise = require('./promise');
 
@@ -4305,7 +4479,7 @@ SVGNodeContainer.prototype = Object.create(SVGContainer.prototype);
 
 module.exports = SVGNodeContainer;
 
-},{"./promise":18,"./svgcontainer":26}],28:[function(require,module,exports){
+},{"./promise":20,"./svgcontainer":28}],30:[function(require,module,exports){
 var NodeContainer = require('./nodecontainer');
 
 function TextContainer(node, parent) {
@@ -4340,7 +4514,7 @@ function capitalize(m, p1, p2) {
 
 module.exports = TextContainer;
 
-},{"./nodecontainer":16}],29:[function(require,module,exports){
+},{"./nodecontainer":18}],31:[function(require,module,exports){
 exports.smallImage = function smallImage() {
     return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 };
@@ -4511,7 +4685,7 @@ exports.parseBackgrounds = function(backgroundImage) {
     return results;
 };
 
-},{}],30:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 var GradientContainer = require('./gradientcontainer');
 
 function WebkitGradientContainer(imageData) {
@@ -4523,7 +4697,7 @@ WebkitGradientContainer.prototype = Object.create(GradientContainer.prototype);
 
 module.exports = WebkitGradientContainer;
 
-},{"./gradientcontainer":11}],31:[function(require,module,exports){
+},{"./gradientcontainer":11}],33:[function(require,module,exports){
 var Promise = require('./promise');
 
 function XHR(url) {
@@ -4549,5 +4723,5 @@ function XHR(url) {
 
 module.exports = XHR;
 
-},{"./promise":18}]},{},[6])(6)
+},{"./promise":20}]},{},[6])(6)
 });
