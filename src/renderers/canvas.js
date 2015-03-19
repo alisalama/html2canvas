@@ -206,7 +206,7 @@ CanvasRenderer.prototype.renderListItemAdornment = function(container, bounds, s
         case 'lower-roman':
             var listItemContainer = new ListItemContainer(container.parent.node, container.parent.parent);
             var listContainer     = new ListContainer(listItemContainer.parent.node, listItemContainer.parent.parent);
-            var index             = listContainer.findNumericalIndexOfListItem(listItemContainer)
+            var index             = listContainer.findNumericalIndexOfListItem(listItemContainer);
             var value             = listItemContainer.listItemText(styleType, index);
 
             value += '.';
@@ -228,13 +228,13 @@ CanvasRenderer.prototype.renderListItemAdornment = function(container, bounds, s
             this.setFillStyle(color);
             break;
 
-        case 'disc':
         default:
+        case 'disc':
             // log(" > for list of type '",styleType,"', returning disc @ {x:",x,", y:",y,", size:",size,"}");
             this.circle(x, y, size);
             break;
     }
-}
+};
 
 
 function hasEntries(array) {

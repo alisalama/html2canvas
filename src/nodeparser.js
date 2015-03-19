@@ -457,7 +457,7 @@ NodeParser.prototype.paintText = function(container) {
                 this.renderer.text(textList[index], bounds.left, bounds.bottom);
                 this.renderTextDecoration(container.parent, bounds, this.fontMetrics.getMetrics(family, size));
 
-                if (index == 0 && container.parent.node.nodeName === 'LI'){
+                if (index === 0 && container.parent.node.nodeName === 'LI'){
                     this.renderListItemStyle(container, bounds);
                 }
             }
@@ -474,8 +474,8 @@ NodeParser.prototype.renderListItemStyle = function(container, bounds) {
         return;
     }
 
-    var sizeToTextWidthRatio     = .5;
-    var paddingToTextWidthRatio  = .75;
+    var sizeToTextWidthRatio     = 0.5;
+    var paddingToTextWidthRatio  = 0.75;
 
     this.renderer.renderListItemAdornment(container, bounds, styleType, listItemColor, sizeToTextWidthRatio, paddingToTextWidthRatio);
 };

@@ -40,6 +40,13 @@ function html2canvas(nodeList, options) {
         options.scaleX = parseFloat(options.scaleX) || 1;
         options.scaleY = parseFloat(options.scaleY) || 1;
     }
+    // let's set the original dimensions if any scaling is to occur:
+    options.__origWidth  = options.width;
+    options.__origHeight = options.height;
+
+    // assume that any height/width dimensions are provided UN-SCALED. Thus, scale them here to the appropriate scale-factor.
+    if (options.width) { options.width *= options.scaleX; }
+    if (options.height) { options.height *= options.scaleY; }
 
     if (typeof(nodeList) === "string") {
         if (typeof(options.proxy) !== "string") {
@@ -47,6 +54,11 @@ function html2canvas(nodeList, options) {
         }
         var width = options.width != null ? options.width : window.innerWidth;
         var height = options.height != null ? options.height : window.innerHeight;
+
+        // account for scaleFactor
+        width  *= options.scaleX;
+        height *= options.scaleY;
+
         return loadUrlDocument(absoluteUrl(nodeList), options.proxy, document, width, height, options).then(function(container) {
             return renderWindow(container.contentWindow.document.documentElement, container, options, width, height);
         });
@@ -54,7 +66,16 @@ function html2canvas(nodeList, options) {
 
     var node = ((nodeList === undefined) ? [document.documentElement] : ((nodeList.length) ? nodeList : [nodeList]))[0];
     node.setAttribute(html2canvasNodeAttribute + index, index);
-    return renderDocument(node.ownerDocument, options, node.ownerDocument.defaultView.innerWidth, node.ownerDocument.defaultView.innerHeight, index).then(function(canvas) {
+
+
+    // use either the viewport dimensions, or the actual node dimensions if they exceed the viewport (unless in view mode)
+    var baseWidth  = options.type === "view" ? node.ownerDocument.defaultView.innerWidth : Math.max(node.clientWidth,  node.ownerDocument.defaultView.innerWidth);
+    var baseHeight = options.type === "view" ? node.ownerDocument.defaultView.innerHeight : Math.max(node.clientHeight, node.ownerDocument.defaultView.innerHeight);
+    var useWidth   = baseWidth * options.scaleX;
+    var useHeight  = baseHeight * options.scaleY;
+
+
+    return renderDocument(node.ownerDocument, options, useWidth, useHeight, index).then(function(canvas) {
         if (typeof(options.onrendered) === "function") {
             log("options.onrendered is deprecated, html2canvas returns a Promise containing the canvas");
             options.onrendered(canvas);
@@ -97,6 +118,17 @@ function renderWindow(node, container, options, windowWidth, windowHeight) {
     var height = options.type === "view" ? windowHeight : documentHeight(clonedWindow.document);
     var renderer = new options.renderer(width, height, imageLoader, options, document);
     var parser = new NodeParser(node, renderer, support, imageLoader, options);
+
+    //@todo refactor :
+    var useBounds =  {
+        top:    bounds.top * options.scaleY,
+        bottom: bounds.bottom * options.scaleY,
+        right:  bounds.right * options.scaleX,
+        left:   bounds.left * options.scaleX,
+        width:  bounds.width * options.scaleX,
+        height: bounds.height * options.scaleY
+    };
+
     return parser.ready.then(function() {
         log("Finished rendering");
         var canvas;
@@ -106,7 +138,7 @@ function renderWindow(node, container, options, windowWidth, windowHeight) {
         } else if (node === clonedWindow.document.body || node === clonedWindow.document.documentElement || options.canvas != null) {
             canvas = renderer.canvas;
         } else {
-            canvas = crop(renderer.canvas, {width:  options.width != null ? options.width : bounds.width, height: options.height != null ? options.height : bounds.height, top: bounds.top, left: bounds.left, x: clonedWindow.pageXOffset, y: clonedWindow.pageYOffset});
+            canvas = crop(renderer.canvas, {width:  options.width != null ? options.width : useBounds.width, height: options.height != null ? options.height : useBounds.height, top: useBounds.top, left: useBounds.left, x: clonedWindow.pageXOffset, y: clonedWindow.pageYOffset});
         }
 
         cleanupContainer(container, options);

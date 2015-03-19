@@ -45,6 +45,8 @@ ListItemContainer.prototype.generateListNumber = {
 
 ListItemContainer.prototype.listItemText = function (type, currentIndex) {
 
+    var text;
+
     switch (type) {
         case "decimal-leading-zero":
             text = (currentIndex.toString().length === 1) ? currentIndex = "0" + currentIndex.toString() : currentIndex.toString();
@@ -61,8 +63,8 @@ ListItemContainer.prototype.listItemText = function (type, currentIndex) {
         case "upper-alpha":
             text = this.generateListNumber.listAlpha(currentIndex);
             break;
-        case "decimal":
         default:
+        case "decimal":
             text = currentIndex;
             break;
     }
