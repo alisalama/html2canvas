@@ -13,7 +13,17 @@ ListContainer.prototype.getNodeList = function(){
 
 ListContainer.prototype.findNumericalIndexOfListItem = function(listItem){
 
-    return this.getNodeList().indexOf(listItem.node) + 1;
+     var listItems = this.getNodeList();
+    
+    for (var i = listItems.length >>> 0; i--;) { 
+      
+      if(listItems[i].nodeName !== "LI" ){
+        listItems.splice(i, 1);
+      }
+
+    }
+
+    return listItems.indexOf(listItem.node) + 1;
 
 };
 
