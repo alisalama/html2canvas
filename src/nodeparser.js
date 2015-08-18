@@ -460,6 +460,9 @@ NodeParser.prototype.paintText = function(container) {
                 if (index === 0 && container.parent.node.nodeName === 'LI'){
                     this.renderListItemStyle(container, bounds);
                 }
+                else if (index == 0 && container.node.previousElementSibling === null && container.parent.parent.node.nodeName === 'LI') {
+                    this.renderListItemStyle(container.parent, bounds);
+                }
             }
         }, this);
     }, this);
